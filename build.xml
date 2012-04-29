@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="${projectName}" default="build" basedir=".">
+    <description>
+        ${projectName} project
+    </description>
+
+    <property file="build.properties"/>
+
+	<!-- Configure the project classpath -->
+    <path id="project.class.path">
+        <dirset dir="${build.dir}"/>
+        <fileset dir="${lib.dir}">
+            <include name="*.jar"/>
+        </fileset>     
+    </path>
+
+
+
+	<!-- compile -->	
+    <target name="build" depends = "clean">
+		<mkdir dir="${build.dir}"/>    
+		
+		
+        <javac
+            destdir="${build.dir}"
+            debug="on"
+            deprecation="on"
+            optimize="off"
+        	
+            >
+            <src path="${src.dir}"/>
+            <classpath>
+                <path refid="project.class.path"/>
+            </classpath>
+        </javac>
+
+
+        <copy todir="${build.dir}">
+            <fileset dir="${src.dir}">
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+    </target>
+	
+	<target name="jar" depends="build">
+		  <jar destfile="${dist.dir}/lib/vncj.jar">
+		    <fileset dir="${build.dir}"/>	  	
+		  </jar>
+	</target>
+	<target name="zip-src" depends="build, jar">
+		  <jar destfile="${dist.dir}/lib/vncj-src.zip">
+		    <fileset dir="${src.dir}"/>	  	
+		  </jar>
+	</target>	
+	
+    
+
+   
+
+
+<!-- delete any classfiles -->
+<target name="clean">
+		<!-- ants delete task will complain if the directory is not there, make sure it is -->
+		<mkdir dir="${build.dir}"/>    
+        <delete dir="${build.dir}"/>
+		<mkdir dir="${hibernate.dir}"/>    
+        <delete dir="${hibernate.dir}"/>        
+</target>
+
+  
+</project>
