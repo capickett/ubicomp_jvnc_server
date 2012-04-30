@@ -1,29 +1,10 @@
 package gnu.rfb;
 
-/**
-* <br><br><center><table border="1" width="80%"><hr>
-* <strong><a href="http://www.amherst.edu/~tliron/vncj">VNCj</a></strong>
-* <p>
-* Copyright (C) 2000-2002 by Tal Liron
-* <p>
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public License
-* as published by the Free Software Foundation; either version 2.1
-* of the License, or (at your option) any later version.
-* <p>
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License</a>
-* for more details.
-* <p>
-* You should have received a copy of the <a href="http://www.gnu.org/copyleft/lesser.html">
-* GNU Lesser General Public License</a> along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-* <hr></table></center>
-**/
-
 import java.awt.event.*;
+
+/**
+* Translates UNIX keysym codes to/from Java virtual key codes.
+**/
 
 public abstract class keysym
 {
@@ -84,7 +65,7 @@ public abstract class keysym
 	public static final int KpEqual		= 0xFFBD;
 	public static final int KpMultiply	= 0xFFAA;
 	public static final int KpAdd		= 0xFFAB;
-	public static final int KpSeparator	= 0xFFAC;	
+	public static final int KpSeparator	= 0xFFAC;
 	public static final int KpSubtract	= 0xFFAD;
 	public static final int KpDecimal	= 0xFFAE;
 	public static final int KpDivide	= 0xFFAF;
@@ -93,7 +74,7 @@ public abstract class keysym
 	public static final int KpF2		= 0xFF92;
 	public static final int KpF3		= 0xFF93;
 	public static final int KpF4		= 0xFF94;
-
+	
 	public static final int Kp0			= 0xFFB0;
 	public static final int Kp1			= 0xFFB1;
 	public static final int Kp2			= 0xFFB2;
@@ -140,151 +121,163 @@ public abstract class keysym
 	public static final int MetaR		= 0xFFE8;
 	public static final int AltL		= 0xFFE9;
 	public static final int AltR		= 0xFFEA;
-
-	public static int toVK( int keysym )
+	
+	public static void toVK( int keysym, int[] vk )
 	{
+		vk[1] = KeyEvent.KEY_LOCATION_STANDARD;
 		switch( keysym )
 		{
-		case DeadGrave: return KeyEvent.VK_DEAD_GRAVE;
-		case DeadAcute: return KeyEvent.VK_DEAD_ACUTE;
-		case DeadCircumflex: return KeyEvent.VK_DEAD_CIRCUMFLEX;
-		case DeadTilde: return KeyEvent.VK_DEAD_TILDE;
+		case DeadGrave: vk[0] = KeyEvent.VK_DEAD_GRAVE; break;
+		case DeadAcute: vk[0] = KeyEvent.VK_DEAD_ACUTE; break;
+		case DeadCircumflex: vk[0] = KeyEvent.VK_DEAD_CIRCUMFLEX; break;
+		case DeadTilde: vk[0] = KeyEvent.VK_DEAD_TILDE; break;
 		
-		case BackSpace: return KeyEvent.VK_BACK_SPACE;
-		case Tab: return KeyEvent.VK_TAB;
-		//No Java equivalent: case Linefeed: return KeyEvent.;
-		case Clear: return KeyEvent.VK_CLEAR;
-		case Return: return KeyEvent.VK_ENTER;
-		case Pause: return KeyEvent.VK_PAUSE;
-		case ScrollLock: return KeyEvent.VK_SCROLL_LOCK;
-		//No Java equivalent: case SysReq: return KeyEvent.;
-		case Escape: return KeyEvent.VK_ESCAPE;
+		case Tab: vk[0] = KeyEvent.VK_TAB; break;
+		//No Java equivalent: case Linefeed: vk[0] = KeyEvent.;
+		case Clear: vk[0] = KeyEvent.VK_CLEAR; break;
+		case Return: vk[0] = KeyEvent.VK_ENTER; break;
+		case Pause: vk[0] = KeyEvent.VK_PAUSE; break;
+		case ScrollLock: vk[0] = KeyEvent.VK_SCROLL_LOCK; break;
+		//No Java equivalent: case SysReq: vk[0] = KeyEvent.;
+		case Escape: vk[0] = KeyEvent.VK_ESCAPE; break;
 		
-		case Delete: return KeyEvent.VK_DELETE;
+		case 0: // Some clients (the MF java viewer) send 0 instead of 0xFFFF
+		case Delete: vk[0] = KeyEvent.VK_DELETE; break;
 		
-		case Home: return KeyEvent.VK_HOME;
-		case Left: return KeyEvent.VK_LEFT;
-		case Up: return KeyEvent.VK_UP;
-		case Right: return KeyEvent.VK_RIGHT;
-		case Down: return KeyEvent.VK_DOWN;
-		case PageUp: return KeyEvent.VK_PAGE_UP;
-		case PageDown: return KeyEvent.VK_PAGE_DOWN;
-		case End: return KeyEvent.VK_END;
-		//No Java equivalent: case Begin: return KeyEvent.;
+		case Home: vk[0] = KeyEvent.VK_HOME; break;
+		case Left: vk[0] = KeyEvent.VK_LEFT; break;
+		case Up: vk[0] = KeyEvent.VK_UP; break;
+		case Right: vk[0] = KeyEvent.VK_RIGHT; break;
+		case Down: vk[0] = KeyEvent.VK_DOWN; break;
+		case PageUp: vk[0] = KeyEvent.VK_PAGE_UP; break;
+		case PageDown: vk[0] = KeyEvent.VK_PAGE_DOWN; break;
+		case End: vk[0] = KeyEvent.VK_END; break;
+		//No Java equivalent: case Begin: vk[0] = KeyEvent.;
 		
-		//No Java equivalent: case Select: return KeyEvent.;
-		case Print: return KeyEvent.VK_PRINTSCREEN;
-		//No Java equivalent: case Execute: return KeyEvent.;
-		case Insert: return KeyEvent.VK_INSERT;
+		//No Java equivalent: case Select: vk[0] = KeyEvent.;
+		case Print: vk[0] = KeyEvent.VK_PRINTSCREEN; break;
+		//No Java equivalent: case Execute: vk[0] = KeyEvent.;
+		case Insert: vk[0] = KeyEvent.VK_INSERT; break;
 		
-		case Cancel: return KeyEvent.VK_CANCEL;
-		case Help: return KeyEvent.VK_HELP;
-		//No Java equivalent: case Break: return KeyEvent.;
-		case NumLock: return KeyEvent.VK_NUM_LOCK;
+		case Cancel: vk[0] = KeyEvent.VK_CANCEL; break;
+		case Help: vk[0] = KeyEvent.VK_HELP; break;
+		//No Java equivalent: case Break: vk[0] = KeyEvent.;
+		case NumLock: vk[0] = KeyEvent.VK_NUM_LOCK; break;
 		
-		case KpSpace: return KeyEvent.VK_SPACE;
-		case KpTab: return KeyEvent.VK_TAB;
-		case KpEnter: return KeyEvent.VK_ENTER;
+		case KpSpace: vk[0] = KeyEvent.VK_SPACE; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpTab: vk[0] = KeyEvent.VK_TAB; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpEnter: vk[0] = KeyEvent.VK_ENTER; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
 		
-		case KpHome: return KeyEvent.VK_HOME;
-		case KpLeft: return KeyEvent.VK_LEFT;
-		case KpUp: return KeyEvent.VK_UP;
-		case KpRight: return KeyEvent.VK_RIGHT;
-		case KpDown: return KeyEvent.VK_DOWN;
-		case KpPageUp: return KeyEvent.VK_PAGE_UP; // = KpPrior
-		case KpPageDown: return KeyEvent.VK_PAGE_DOWN; // = KpNext
-		case KpEnd: return KeyEvent.VK_END;
-		//No Java equivalent: case KpBegin: return KeyEvent.;
-		case KpInsert: return KeyEvent.VK_INSERT;
-		case KpDelete: return KeyEvent.VK_DELETE;
-		case KpEqual: return KeyEvent.VK_EQUALS;
-		case KpMultiply: return KeyEvent.VK_MULTIPLY;
-		case KpAdd: return KeyEvent.VK_ADD;
-		case KpSeparator: return KeyEvent.VK_SEPARATER; // Sun should spellcheck...
-		case KpSubtract: return KeyEvent.VK_SUBTRACT;
-		case KpDecimal: return KeyEvent.VK_DECIMAL;
-		case KpDivide: return KeyEvent.VK_DIVIDE;
+		case KpHome: vk[0] = KeyEvent.VK_HOME; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpLeft: vk[0] = KeyEvent.VK_LEFT; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpUp: vk[0] = KeyEvent.VK_UP; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpRight: vk[0] = KeyEvent.VK_RIGHT; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpDown: vk[0] = KeyEvent.VK_DOWN; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpPageUp: vk[0] = KeyEvent.VK_PAGE_UP; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break; // = KpPrior
+		case KpPageDown: vk[0] = KeyEvent.VK_PAGE_DOWN; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break; // = KpNext
+		case KpEnd: vk[0] = KeyEvent.VK_END; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		//No Java equivalent: case KpBegin: vk[0] = KeyEvent.;
+		case KpInsert: vk[0] = KeyEvent.VK_INSERT; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpDelete: vk[0] = KeyEvent.VK_DELETE; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpEqual: vk[0] = KeyEvent.VK_EQUALS; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpMultiply: vk[0] = KeyEvent.VK_MULTIPLY; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpAdd: vk[0] = KeyEvent.VK_ADD; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpSeparator: vk[0] = KeyEvent.VK_SEPARATOR; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpSubtract: vk[0] = KeyEvent.VK_SUBTRACT; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpDecimal: vk[0] = KeyEvent.VK_DECIMAL; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpDivide: vk[0] = KeyEvent.VK_DIVIDE; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
 		
-		case KpF1: return KeyEvent.VK_F1;
-		case KpF2: return KeyEvent.VK_F2;
-		case KpF3: return KeyEvent.VK_F3;
-		case KpF4: return KeyEvent.VK_F4;
+		case KpF1: vk[0] = KeyEvent.VK_F1; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpF2: vk[0] = KeyEvent.VK_F2; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpF3: vk[0] = KeyEvent.VK_F3; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case KpF4: vk[0] = KeyEvent.VK_F4; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
 		
-		case Kp0: return KeyEvent.VK_NUMPAD0;
-		case Kp1: return KeyEvent.VK_NUMPAD1;
-		case Kp2: return KeyEvent.VK_NUMPAD2;
-		case Kp3: return KeyEvent.VK_NUMPAD3;
-		case Kp4: return KeyEvent.VK_NUMPAD4;
-		case Kp5: return KeyEvent.VK_NUMPAD5;
-		case Kp6: return KeyEvent.VK_NUMPAD6;
-		case Kp7: return KeyEvent.VK_NUMPAD7;
-		case Kp8: return KeyEvent.VK_NUMPAD8;
-		case Kp9: return KeyEvent.VK_NUMPAD9;
+		case Kp0: vk[0] = KeyEvent.VK_NUMPAD0; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp1: vk[0] = KeyEvent.VK_NUMPAD1; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp2: vk[0] = KeyEvent.VK_NUMPAD2; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp3: vk[0] = KeyEvent.VK_NUMPAD3; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp4: vk[0] = KeyEvent.VK_NUMPAD4; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp5: vk[0] = KeyEvent.VK_NUMPAD5; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp6: vk[0] = KeyEvent.VK_NUMPAD6; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp7: vk[0] = KeyEvent.VK_NUMPAD7; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp8: vk[0] = KeyEvent.VK_NUMPAD8; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
+		case Kp9: vk[0] = KeyEvent.VK_NUMPAD9; vk[1] = KeyEvent.KEY_LOCATION_NUMPAD; break;
 		
-		case F1: return KeyEvent.VK_F1;
-		case F2: return KeyEvent.VK_F2;
-		case F3: return KeyEvent.VK_F3;
-		case F4: return KeyEvent.VK_F4;
-		case F5: return KeyEvent.VK_F5;
-		case F6: return KeyEvent.VK_F6;
-		case F7: return KeyEvent.VK_F7;
-		case F8: return KeyEvent.VK_F8;
-		case F9: return KeyEvent.VK_F9;
-		case F10: return KeyEvent.VK_F10;
-		case F11: return KeyEvent.VK_F11;
-		case F12: return KeyEvent.VK_F12;
-		case F13: return KeyEvent.VK_F12;
-		case F14: return KeyEvent.VK_F12;
-		case F15: return KeyEvent.VK_F12;
-		case F16: return KeyEvent.VK_F12;
-		case F17: return KeyEvent.VK_F12;
-		case F18: return KeyEvent.VK_F12;
-		case F19: return KeyEvent.VK_F12;
-		case F20: return KeyEvent.VK_F12;
-		case F21: return KeyEvent.VK_F12;
-		case F22: return KeyEvent.VK_F12;
-		case F23: return KeyEvent.VK_F12;
-		case F24: return KeyEvent.VK_F12;
+		case F1: vk[0] = KeyEvent.VK_F1; break;
+		case F2: vk[0] = KeyEvent.VK_F2; break;
+		case F3: vk[0] = KeyEvent.VK_F3; break;
+		case F4: vk[0] = KeyEvent.VK_F4; break;
+		case F5: vk[0] = KeyEvent.VK_F5; break;
+		case F6: vk[0] = KeyEvent.VK_F6; break;
+		case F7: vk[0] = KeyEvent.VK_F7; break;
+		case F8: vk[0] = KeyEvent.VK_F8; break;
+		case F9: vk[0] = KeyEvent.VK_F9; break;
+		case F10: vk[0] = KeyEvent.VK_F10; break;
+		case F11: vk[0] = KeyEvent.VK_F11; break;
+		case F12: vk[0] = KeyEvent.VK_F12; break;
+		case F13: vk[0] = KeyEvent.VK_F12; break;
+		case F14: vk[0] = KeyEvent.VK_F12; break;
+		case F15: vk[0] = KeyEvent.VK_F12; break;
+		case F16: vk[0] = KeyEvent.VK_F12; break;
+		case F17: vk[0] = KeyEvent.VK_F12; break;
+		case F18: vk[0] = KeyEvent.VK_F12; break;
+		case F19: vk[0] = KeyEvent.VK_F12; break;
+		case F20: vk[0] = KeyEvent.VK_F12; break;
+		case F21: vk[0] = KeyEvent.VK_F12; break;
+		case F22: vk[0] = KeyEvent.VK_F12; break;
+		case F23: vk[0] = KeyEvent.VK_F12; break;
+		case F24: vk[0] = KeyEvent.VK_F12; break;
 		
-		case CapsLock: return KeyEvent.VK_CAPS_LOCK;
-		//No Java equivalent: case ShiftLock: return KeyEvent.;
-		default: return 0;
-		}
-	}
-
-	public static int toVKall( int keysym )
-	{
-		int key = toVK( keysym );
-		if( key != 0 )
-			return key;
-		
-		switch( keysym )
-		{
-		case ShiftL: return KeyEvent.VK_SHIFT;
-		case ShiftR: return KeyEvent.VK_SHIFT;
-		case ControlL: return KeyEvent.VK_CONTROL;
-		case ControlR: return KeyEvent.VK_CONTROL;
-		case MetaL: return KeyEvent.VK_META;
-		case MetaR: return KeyEvent.VK_META;
-		case AltL: return KeyEvent.VK_ALT;
-		case AltR: return KeyEvent.VK_ALT;
-		default: return 0;
+		case CapsLock: vk[0] = KeyEvent.VK_CAPS_LOCK; break;
+		//No Java equivalent: case ShiftLock: vk[0] = KeyEvent.;
+		default: vk[0] = KeyEvent.VK_UNDEFINED; vk[1] = KeyEvent.KEY_LOCATION_UNKNOWN; break;
 		}
 	}
 	
-	public static int toMask( int keysym )
+	public static void toVKall( int keysym, int vk[] )
+	{
+		toVK( keysym, vk );
+		if( vk[0] != KeyEvent.VK_UNDEFINED )
+			return;
+		
+		vk[1] = KeyEvent.KEY_LOCATION_UNKNOWN;
+		switch( keysym )
+		{
+		case BackSpace: vk[0] = KeyEvent.VK_BACK_SPACE; break;
+		case ShiftL: vk[0] = KeyEvent.VK_SHIFT; vk[1] = KeyEvent.KEY_LOCATION_LEFT; break;
+		case ShiftR: vk[0] = KeyEvent.VK_SHIFT; vk[1] = KeyEvent.KEY_LOCATION_RIGHT; break;
+		case ControlL: vk[0] = KeyEvent.VK_CONTROL; vk[1] = KeyEvent.KEY_LOCATION_LEFT; break;
+		case ControlR: vk[0] = KeyEvent.VK_CONTROL; vk[1] = KeyEvent.KEY_LOCATION_RIGHT; break;
+		case MetaL: vk[0] = KeyEvent.VK_META; vk[1] = KeyEvent.KEY_LOCATION_LEFT; break;
+		case MetaR: vk[0] = KeyEvent.VK_META; vk[1] = KeyEvent.KEY_LOCATION_RIGHT; break;
+		case AltL: vk[0] = KeyEvent.VK_ALT; vk[1] = KeyEvent.KEY_LOCATION_LEFT; break;
+		case AltR: vk[0] = KeyEvent.VK_ALT; vk[1] = KeyEvent.KEY_LOCATION_RIGHT; break;
+		default: vk[0] = KeyEvent.VK_UNDEFINED; break;
+		}
+	}
+	
+	public static char toCharacter( int keysym )
 	{
 		switch( keysym )
 		{
-		case ShiftL: return KeyEvent.SHIFT_MASK;
-		case ShiftR: return KeyEvent.SHIFT_MASK;
-		case ControlL: return KeyEvent.CTRL_MASK;
-		case ControlR: return KeyEvent.CTRL_MASK;
-		case MetaL: return KeyEvent.META_MASK;
-		case MetaR: return KeyEvent.META_MASK;
-		case AltL: return KeyEvent.ALT_MASK;
-		case AltR: return KeyEvent.ALT_MASK;
-		default: return 0;
+		case BackSpace: return '\b';
+		default: return (char) keysym;
+		}
+	}
+	
+	public static void toMask( int keysym, int[] mask )
+	{
+		switch( keysym )
+		{
+		case ShiftL: mask[0] = KeyEvent.SHIFT_DOWN_MASK; mask[1] = KeyEvent.KEY_LOCATION_LEFT; break;
+		case ShiftR: mask[0] = KeyEvent.SHIFT_DOWN_MASK; mask[1] = KeyEvent.KEY_LOCATION_RIGHT; break;
+		case ControlL: mask[0] = KeyEvent.CTRL_DOWN_MASK; mask[1] = KeyEvent.KEY_LOCATION_LEFT; break;
+		case ControlR: mask[0] = KeyEvent.CTRL_DOWN_MASK; mask[1] = KeyEvent.KEY_LOCATION_RIGHT; break;
+		case MetaL: mask[0] = KeyEvent.META_DOWN_MASK; mask[1] = KeyEvent.KEY_LOCATION_LEFT; break;
+		case MetaR: mask[0] = KeyEvent.META_DOWN_MASK; mask[1] = KeyEvent.KEY_LOCATION_RIGHT; break;
+		case AltL: mask[0] = KeyEvent.ALT_DOWN_MASK; mask[1] = KeyEvent.KEY_LOCATION_LEFT; break;
+		case AltR: mask[0] = KeyEvent.ALT_DOWN_MASK; mask[1] = KeyEvent.KEY_LOCATION_RIGHT; break;
+		default: mask[0] = 0; mask[1] = KeyEvent.KEY_LOCATION_UNKNOWN; break;
 		}
 	}
 }

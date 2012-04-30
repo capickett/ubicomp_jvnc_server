@@ -1,0 +1,11 @@
+gnu.awt
+gnu.awt.virtual
+gnu.awt.virtual.swing
+gnu.rfb
+gnu.rfb.server
+gnu.swing
+gnu.swing.virtual
+gnu.vnc
+gnu.vnc.awt
+gnu.vnc.console
+gnu.vnc.pixels

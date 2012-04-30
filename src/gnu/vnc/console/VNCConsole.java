@@ -1,36 +1,16 @@
 package gnu.vnc.console;
 
-/**
-* <br><br><center><table border="1" width="80%"><hr>
-* <strong><a href="http://www.amherst.edu/~tliron/vncj">VNCj</a></strong>
-* <p>
-* Copyright (C) 2000-2002 by Tal Liron
-* <p>
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public License
-* as published by the Free Software Foundation; either version 2.1
-* of the License, or (at your option) any later version.
-* <p>
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License</a>
-* for more details.
-* <p>
-* You should have received a copy of the <a href="http://www.gnu.org/copyleft/lesser.html">
-* GNU Lesser General Public License</a> along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-* <hr></table></center>
-**/
-
 import gnu.rfb.*;
 import gnu.rfb.server.*;
 
 import java.io.*;
-import java.util.Enumeration;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
+
+/**
+* Base class for console emulators supporting multiple RFB clients.
+**/
 
 public abstract class VNCConsole implements RFBServer, Runnable
 {
@@ -51,7 +31,7 @@ public abstract class VNCConsole implements RFBServer, Runnable
 		out = buffer.printStream();
 
 		// Start thread
-		new Thread( this ).start();
+		new Thread( this, "VNCConsole-" + displayName ).start();
 	}
 	
 	//
@@ -143,18 +123,21 @@ public abstract class VNCConsole implements RFBServer, Runnable
 	public void keyEvent( RFBClient client, boolean down, int key ) throws IOException
 	{
 		// Ignore modifiers
-		if( keysym.toMask( key ) != 0 )
+		int[] mask = new int[2];
+		keysym.toMask( key, mask );
+		if( mask[0] != KeyEvent.VK_UNDEFINED )
 			return;
 		
 		if( down )
 		{
-			int vk = keysym.toVK( key );
-			if( vk == 0 )
+			int[] vk = new int[2];
+			keysym.toVK( key, vk );
+			if( vk[0] == KeyEvent.VK_UNDEFINED )
 				// Standard key
 				buffer.input( key );
 			else
 				// Virtual key
-				buffer.inputVK( vk );	
+				buffer.inputVK( vk[0] );	
 		}
 	}
 	
@@ -165,7 +148,6 @@ public abstract class VNCConsole implements RFBServer, Runnable
 	public void clientCutText( RFBClient client, String text ) throws IOException
 	{
 	}
-	
 
 	//
 	// Runnable

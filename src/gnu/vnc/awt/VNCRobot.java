@@ -1,28 +1,5 @@
 package gnu.vnc.awt;
 
-/**
-* <br><br><center><table border="1" width="80%"><hr>
-* <strong><a href="http://www.amherst.edu/~tliron/vncj">VNCj</a></strong>
-* <p>
-* Copyright (C) 2000-2002 by Tal Liron
-* <p>
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public License
-* as published by the Free Software Foundation; either version 2.1
-* of the License, or (at your option) any later version.
-* <p>
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License</a>
-* for more details.
-* <p>
-* You should have received a copy of the <a href="http://www.gnu.org/copyleft/lesser.html">
-* GNU Lesser General Public License</a> along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-* <hr></table></center>
-**/
-
 import gnu.rfb.*;
 import gnu.rfb.server.*;
 
@@ -31,13 +8,17 @@ import java.awt.*;
 import java.awt.image.*;
 import java.awt.event.*;
 
+/**
+* A very limited implementation of a {@link java.awt.Robot} that supports RFB clients.
+**/
+
 public class VNCRobot extends Component implements RFBServer
 {
 	//
 	// Construction
 	//
 	
-	public VNCRobot( int display, String displayName )
+	public VNCRobot( int display, String displayName, int width, int height )
 	{
 		this.displayName = displayName;
 		device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
@@ -53,7 +34,7 @@ public class VNCRobot extends Component implements RFBServer
 	//
 	// RFBServer
 	//
-
+	
 	// Clients
 	
 	public void addClient( RFBClient client )
@@ -73,13 +54,11 @@ public class VNCRobot extends Component implements RFBServer
 	
 	public int getFrameBufferWidth( RFBClient client )
 	{
-		//return 200;
 		return device.getDefaultConfiguration().getBounds().width;
 	}
 	
 	public int getFrameBufferHeight( RFBClient client )
 	{
-		//return 200;
 		return device.getDefaultConfiguration().getBounds().height;
 	}
 	
@@ -94,7 +73,7 @@ public class VNCRobot extends Component implements RFBServer
 	}
 	
 	// Messages from client to server
-
+	
 	public void setClientProtocolVersionMsg( RFBClient client, String protocolVersionMsg ) throws IOException
 	{
 	}
@@ -118,9 +97,12 @@ public class VNCRobot extends Component implements RFBServer
 	
 	public void frameBufferUpdateRequest( RFBClient client, boolean incremental, int x, int y, int w, int h ) throws IOException
 	{
+		// If you really really want automatic refreshes, comment out the following two lines.
+		// BEWARE, it will send the entire screen, and probably be unusably slow. For now,
+		// you must "request screen refresh" manually from your VNC viewer.
 		if( incremental )
 			return;
-			
+		
 		// Create image
 		BufferedImage image = robot.createScreenCapture( new Rectangle( x, y, w, h ) );
 		
@@ -141,13 +123,14 @@ public class VNCRobot extends Component implements RFBServer
 	
 	public void keyEvent( RFBClient client, boolean down, int key ) throws IOException
 	{
-		int vk = keysym.toVKall( key );
-		if( vk != 0 )
+		int[] vk = new int[2];
+		keysym.toVKall( key, vk );
+		if( vk[0] != KeyEvent.VK_UNDEFINED )
 		{
 			if( down )
-				robot.keyPress( vk );
+				robot.keyPress( vk[0] );
 			else	
-				robot.keyRelease( vk );
+				robot.keyRelease( vk[0] );
 		}	
 	}
 	
@@ -183,10 +166,7 @@ public class VNCRobot extends Component implements RFBServer
 	public void clientCutText( RFBClient client, String text ) throws IOException
 	{
 	}
-
-        public boolean isUpdateAvailable(RFBClient client){
-            return false;
-        }
+	
 	///////////////////////////////////////////////////////////////////////////////////////
 	// Private
 	

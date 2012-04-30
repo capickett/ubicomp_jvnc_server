@@ -1,350 +1,358 @@
 package gnu.vnc.awt;
 
-/**
- * <br><br><center><table border="1" width="80%"><hr>
- * <strong><a href="http://www.amherst.edu/~tliron/vncj">VNCj</a></strong>
- * <p>
-* Copyright (C) 2000-2002 by Tal Liron
- * <p>
- * This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public License
-* as published by the Free Software Foundation; either version 2.1
- * of the License, or (at your option) any later version.
- * <p>
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License</a>
- * for more details.
- * <p>
-* You should have received a copy of the <a href="http://www.gnu.org/copyleft/lesser.html">
-* GNU Lesser General Public License</a> along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
- * <hr></table></center>
- **/
-
 import gnu.rfb.*;
 import gnu.rfb.server.*;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.event.FocusEvent;
 import java.util.*;
 
-public class VNCEvents {
-    
-    /**
-     *  for debug-loging (using Log4J or System.err depending on avliability)
-     */
-    static Object log;
-    /**
-     *  for debug-loging (using Log4J or System.err depending on avliability)
-     */
-    static java.lang.reflect.Method logmethod;
-    
-    /**
-     *  for debug-loging (using Log4J or System.err depending on avliability)
-     */
-    private void logDebug(String msg) {
-        try {
-            if(log==null)
-/*      try
-        {
-         Class c = Class.forName("org.apache.log4j.Category");
-         if(c==null)
-           throw new ClassNotFoundException();
-         log = (c.getMethod("getInstance", new Class[]{java.lang.String.class})).invoke(null, new Object[]{this.getClass().getName()});
-         logmethod = c.getMethod("debug", new Class[]{Object.class});
-        }
-      catch(ClassNotFoundException x)*/
-            {
-                log = System.err;
-                logmethod = java.io.PrintStream.class.getMethod("println", new Class[]{String.class});
-            }
-            
-            logmethod.invoke(log, new Object[]{msg});
-        }
-        catch(Exception x) {
-            x.printStackTrace();
-            System.err.println(msg);
-        }
-    }
-    //
-    // Construction
-    //
-    
-    public VNCEvents( Window container, RFBClients clients ) {
-        this.container = container;
-        this.clients = clients;
-    }
-    
-    //
-    // Operations
-    //
-    
-    public void translateKeyEvent( RFBClient client, boolean down, int key ) {
-        // Get state
-        State state = getState( client );
-        
-        // Modifiers
-        int newKeyModifiers = keysym.toMask( key );
-        if( newKeyModifiers != 0 ) {
-            if( down )
-                state.keyModifiers |= newKeyModifiers;
-            else
-                state.keyModifiers &= ~newKeyModifiers;
-            return;
-        }
-        
-        char character = '\0';
-        int vk = keysym.toVK( key );
-        if( vk == 0 )
-            character = (char) key;
-        
-        //System.out.println("DEBUG[VNCEvents] translateKeyEvent() state.oldComponent="+state.oldComponent.getClass().getName());
-        
-        //TODO: backspace does not work
-        
-        
-        
-        if( down ) {
-            // Pressed
-            fireKeyEvent(client, KeyEvent.KEY_PRESSED, vk, character, state.keyModifiers , null);
-        }
-        else {
-            // Released
-            fireKeyEvent(client, KeyEvent.KEY_RELEASED, vk, character, state.keyModifiers , null );
-            
-            if( vk == 0 )//  || ( vk == KeyEvent.VK_BACK_SPACE ) )
-            {
-                // Typed (for character keys only)
-                fireKeyEvent(client, KeyEvent.KEY_TYPED, vk, character, state.keyModifiers , null );
-            }
-        }
-        
-        
-        
-    }
-    
-    public void translatePointerEvent( RFBClient client, int buttonMask, int x, int y ) {
-        // Get state
-        State state = getState( client );
-        
-        // Modifiers
-        int newMouseModifiers = 0;
-        boolean pressed = false;
-        int button = -1;
-        if( ( buttonMask & rfb.Button1Mask ) != 0 ){
-            button = 0;
-            newMouseModifiers |= MouseEvent.BUTTON1_MASK;
-            pressed = (newMouseModifiers& MouseEvent.BUTTON1_MASK) > 0;
-        }
-        if( ( buttonMask & rfb.Button2Mask ) != 0 ){
-            button = 1;
-            newMouseModifiers |= MouseEvent.BUTTON2_MASK;
-            pressed = (newMouseModifiers & MouseEvent.BUTTON2_MASK) > 0;
-        }
-        if( ( buttonMask & rfb.Button3Mask ) != 0 ){
-            button = 2;
-            newMouseModifiers |= MouseEvent.BUTTON3_MASK;
-            pressed = (newMouseModifiers & MouseEvent.BUTTON3_MASK) > 0;
-        }
-        
-        // Coordinates relative to the container
-        Insets insets = container.getInsets();
-        //         logDebug("translatePointerEvent(x="+x+" insets.left="+insets.left+", y="+y+" insets.top="+insets.top+"");
-        x += insets.left;
-        y += insets.top;
-        
-        // New component
-        Component newComponent;
-        if( state.dragging )
-            newComponent = state.oldComponent;
-        else
-            newComponent = container.findComponentAt( x, y );
-                
-    	System.out.println(newComponent);
-        
-        state.dragging = false;
-        if( newMouseModifiers == state.mouseModifiers ) {
-            // No buttons changed state
-            if( newMouseModifiers == 0 ) {
-                // Moved (no button pressed)
-                fireMouseEvent(client, container, MouseEvent.MOUSE_MOVED, x, y, 0, state.keyModifiers | state.mouseModifiers );
-            }
-            else {
-                // Dragged (button pressed)
-                state.dragging = true;
-                fireMouseEvent(client, container, MouseEvent.MOUSE_DRAGGED, x, y, 0, state.keyModifiers | state.mouseModifiers );
-            }
-        }
-        else {
-            if( pressed == true){
-                int numClicks = 1;
-                
-                // if 300ms since last click, doubleclick
-                long diff = System.currentTimeMillis()-state.lastMouseClickTime[button];
-                if(diff < 1000){
-                    numClicks = 2;
-                }
-                // Pressed
-                state.mouseModifiers = newMouseModifiers;
-                state.lastMouseClickTime[button]= System.currentTimeMillis();
-                fireMouseEvent(client, container, MouseEvent.MOUSE_PRESSED, x, y, numClicks, state.keyModifiers | state.mouseModifiers );
-                
-                state.lastMouseClickTime[button] = System.currentTimeMillis();
-                fireMouseEvent(client, container, MouseEvent.MOUSE_CLICKED, x, y, numClicks, state.keyModifiers | state.mouseModifiers );
-            }
-            else{
-                // Released (old modifiers)
-                fireMouseEvent(client, container, MouseEvent.MOUSE_RELEASED, x, y, 0, state.keyModifiers | state.mouseModifiers );
-            }
-            
-            // Clicked (old modifiers)
-            
-            state.mouseModifiers = newMouseModifiers;
-            
-            // Focus
-            Component focusComponent = getFocusComponent( container );
-            if( focusComponent != container ) {
-                // Lose old focus
-                if( focusComponent != null ) {
-                    fireEvent(client, new FocusEvent( focusComponent, FocusEvent.FOCUS_LOST ) );
-                }
-                
-                // parent gains focus too
-                if(newComponent != null && newComponent.getParent()!=null){
-                        fireEvent( client,new FocusEvent( newComponent.getParent(), FocusEvent.FOCUS_GAINED ) );
-                        // Gain new focus
-                        fireEvent(client, new FocusEvent( newComponent, FocusEvent.FOCUS_GAINED ) );
-                }else{
-                	System.out.println("bad:"+newComponent);
-                }
-                focusComponent = container;
-            }
-        }
-        
-        
-        if( newComponent != state.oldComponent ) {
-            if( state.oldComponent != null ) {
-                // Exited old component
-                fireMouseEvent(client, container, MouseEvent.MOUSE_EXITED, state.oldX, state.oldY, 0, state.keyModifiers | state.mouseModifiers );
-            }
-            
-            // Entered new component
-            fireMouseEvent(client, container, MouseEvent.MOUSE_ENTERED, x, y, 0, state.keyModifiers | state.mouseModifiers );
-            
-            state.oldComponent = newComponent;
-            state.oldX = x;
-            state.oldY = y;
-        }
-    }
-    
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // Private
-    
-    private Window container;
-    private RFBClients clients;
-    private static HashMap eventMap = new HashMap();
-    
-    private static class State {
-        public int keyModifiers = 0;
-        public int mouseModifiers = 0;
-        public Component oldComponent = null;
-        public int oldX, oldY;
-        public boolean dragging = false;
-        public long lastMouseClickTime[] = new long[5];
-        
-    }
-    
-    public static HashMap getEventMap(){
-        return eventMap;
-    }
-    
-    private State getState( RFBClient client ) {
-        State state = (State) clients.getProperty( client, "events" );
-        if( state == null ) {
-            state = new State();
-            clients.setProperty( client, "events", state );
-        }
-        
-        return state;
-    }
-    
-    private void fireEvent(RFBClient client, ComponentEvent event ) {
-        if(event==null) {
-            System.err.println("VNCEvents.fireEvent(event==null)");
-            return;
-        }
-        
-        
-        
-        ((Component) event.getSource()).enableInputMethods(false); // InputMethods causes problems under Windows, because the event ends up in a java.awt.windows-class that needs all peers to be children in WComponentPeer and our peers are not
-/*         try
-           {
-            logDebug("fireEvent(["+event.getClass().getName()+"]"+event.paramString()+") parent=["+(((Component) event.getSource()).getParent()==null?"null":((Component) event.getSource()).getParent().getClass().getName())+"] event.getSource().isVisible()="+((Component)event.getSource()).isVisible());
-           }
-         catch(Exception e)
-           {
-            e.printStackTrace();
-           }*/
-        
-        getEventMap().put(event,((RFBSocket)client).getInetAddress().getHostName());
-        ((Component) event.getSource()).getToolkit().getSystemEventQueue().postEvent( event );
-    }
-    
-    private void fireKeyEvent(RFBClient client, int id, int vk, char character, int keyModifiers, Component component ) {
-        if(vk == KeyEvent.VK_BACK_SPACE) // VK_BACK_SPACE does not work so interpret it as DELETE. Working from an Ipaq this makes ti usable at all as there is no DELETE and it does not break anything on a PC that is not broken already
-        {
-            vk = KeyEvent.VK_DELETE;
-            character = (char)KeyEvent.VK_DELETE;
-        }
-        
-        KeyEvent ke = new KeyEvent( container, id, System.currentTimeMillis(), keyModifiers, vk, character );
-        logDebug("fireKeyEvent(id="+id+", vk="+vk+" character="+character+" getKeyText="+ke.getKeyText(ke.getKeyCode())+" container="+container.getClass().getName()+"focused compunent="+(component==null?"null":component.getClass().getName()));
-        fireEvent(client, ke );
-    }
-    
-    private void fireMouseEvent(RFBClient client, Component component, int id, int x, int y, int clicks, int modifiers ) {
-        //         logDebug("fireMouseEvent(x="+x+", y="+y+" component=["+component.getClass().getName()+"]");
-        fireEvent(client, new MouseEvent( component, id, System.currentTimeMillis(), modifiers, x, y, clicks, false ) );
-    }
-    
-    private Point getLocation( Component component ) {
-        Point location = component.getLocation();
-        if( component == container ) {
-            return location;
-        }
-        else {
-            Component parent = component.getParent();
-            if( parent != null ) {
-                Point parentLocation = parent.getLocationOnScreen();//getLocation( parent ); // this recursive algorithm gave gigantic values in some cases, the getLocationOnScreen actually works
-                //                                         logDebug("getLocation(parent.getLocationOnScreen()="+parentLocation);
-                return new Point( location.x - parentLocation.x, location.y - parentLocation.y );
-            }
-            else {
-                return location;
-            }
-        }
-    }
-    
-    private Component getFocusComponent( Component component ) {
-        if( component.hasFocus() ) {
-            // We have focus
-            return component;
-        }
-        else if( component instanceof Container ) {
-            // Does one of our children have the focus?
-            Component[] components = ((Container) component).getComponents();
-            Component focusComponent = null;
-            for( int i = 0; i < components.length; i++ ) {
-                focusComponent = getFocusComponent( components[i] );
-                if( focusComponent != null )
-                    // Has focus!
-                    return focusComponent;
-            }
-        }
-        
-        return null;
-    }
+/**
+* Generates AWT events from RFB events for multiple RFB clients. Note that because the event
+* models do not correspond, it must manage an event state for each client as a property 
+**/
+
+public class VNCEvents
+{
+	//
+	// Construction
+	//
+	
+	public VNCEvents( Window container, RFBClients clients )
+	{
+		this.container = container;
+		this.clients = clients;
+	}
+	
+	//
+	// Operations
+	//
+	
+	public void translateKeyEvent( RFBClient client, boolean down, int key )
+	{
+		// Get state
+		State state = getState( client );
+		
+		// Modifiers
+		int[] mask = new int[2];
+		keysym.toMask( key, mask );
+		if( mask[0] != 0 )
+		{
+			if( down )
+				state.keyModifiers |= mask[0];
+			else
+				state.keyModifiers &= ~mask[0];
+			return;
+		}
+		
+		int[] vk = new int[2];
+		keysym.toVK( key, vk );
+		char character = KeyEvent.CHAR_UNDEFINED;
+		if( vk[0] == KeyEvent.VK_UNDEFINED )
+		{
+			// This is a character key
+			character = keysym.toCharacter( key );
+		}
+		
+		if( down )
+		{
+			// Pressed
+			fireKeyEvent( KeyEvent.KEY_PRESSED, vk[0], vk[1], character, state.keyModifiers );
+			state.keyPressed.add( "" + vk[0] );
+			if( character != KeyEvent.CHAR_UNDEFINED )
+			{
+				// Typed (for character keys only)
+				fireKeyEvent( KeyEvent.KEY_TYPED, KeyEvent.VK_UNDEFINED, KeyEvent.KEY_LOCATION_UNKNOWN, character, state.keyModifiers );
+			}
+		}
+		else if( state.keyPressed.remove( "" + vk[0] ) )
+		{
+			// We keep the state of pressed keys because some viewers sent multiple releases
+			// of the same key. That's not nice.
+			
+			// Released
+			fireKeyEvent( KeyEvent.KEY_RELEASED, vk[0], vk[1], character, state.keyModifiers );
+		}
+	}
+	
+	public void translatePointerEvent( RFBClient client, int buttonMask, int x, int y )
+	{
+		// Get state
+		State state = getState( client );
+		
+		// Coordinates relative to the container
+		Insets insets = container.getInsets();
+		x += insets.left;
+		y += insets.top;
+		
+		// New component
+		Component newComponent;
+		if( state.dragging )
+			newComponent = state.oldComponent;
+		else
+			newComponent = container.findComponentAt( x, y );
+			
+		// Coordinates relative to the new component
+		Point newLocation = getLocation( newComponent );
+		int newX = x - newLocation.x;
+		int newY = y - newLocation.y;
+		
+		// Button modifiers
+		int newMouseModifiers = 0;
+		if( ( buttonMask & rfb.Button1Mask ) != 0 )
+			newMouseModifiers |= MouseEvent.BUTTON1_DOWN_MASK;
+		if( ( buttonMask & rfb.Button2Mask ) != 0 )
+			newMouseModifiers |= MouseEvent.BUTTON2_DOWN_MASK;
+		if( ( buttonMask & rfb.Button3Mask ) != 0 )
+			newMouseModifiers |= MouseEvent.BUTTON3_DOWN_MASK;
+		
+		// Buttons
+		if( newMouseModifiers != state.mouseModifiers )
+		{
+			// Button 1
+			if( ( ( newMouseModifiers & MouseEvent.BUTTON1_DOWN_MASK ) != 0 ) &&
+				( ( state.mouseModifiers & MouseEvent.BUTTON1_DOWN_MASK ) == 0 ) )
+			{
+				// Pressed
+				fireMouseEvent( newComponent, MouseEvent.MOUSE_PRESSED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON1 );
+				state.dragging = true;
+			}
+			else if( ( ( newMouseModifiers & MouseEvent.BUTTON1_DOWN_MASK ) == 0 ) &&
+					 ( ( state.mouseModifiers & MouseEvent.BUTTON1_DOWN_MASK ) != 0 ) )
+			{
+				// Released
+				fireMouseEvent( newComponent, MouseEvent.MOUSE_RELEASED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON1 );
+				state.dragging = false;
+				
+				// Check for double-click
+				long now = System.currentTimeMillis();
+				long delta = now - state.lastClick1;
+				if( delta < 300 )
+				{
+					// Double-click
+					fireMouseEvent( newComponent, MouseEvent.MOUSE_CLICKED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON1, 2 );
+					state.lastClick1 = 0;
+				}
+				else
+				{
+					state.lastClick1 = now;
+				}
+				
+				if( newComponent.isFocusable() && !newComponent.isFocusOwner() )
+				{
+					// New focus
+					
+					// Lose old focus
+					Component oldComponent = getFocusComponent( container );
+					if( oldComponent != null )
+					{
+						fireFocusEvent( oldComponent, FocusEvent.FOCUS_LOST, newComponent );
+					}
+						
+					// Gain new focus
+					newComponent.enableInputMethods( false ); // native input methods will not work!
+					fireFocusEvent( newComponent, FocusEvent.FOCUS_GAINED, oldComponent );
+				}
+			}
+			
+			// Button 2
+			if( ( ( newMouseModifiers & MouseEvent.BUTTON2_DOWN_MASK ) != 0 ) &&
+				( ( state.mouseModifiers & MouseEvent.BUTTON2_DOWN_MASK ) == 0 ) )
+			{
+				// Pressed
+				fireMouseEvent( newComponent, MouseEvent.MOUSE_PRESSED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON2 );
+			}
+			else if( ( ( newMouseModifiers & MouseEvent.BUTTON2_DOWN_MASK ) == 0 ) &&
+					 ( ( state.mouseModifiers & MouseEvent.BUTTON2_DOWN_MASK ) != 0 ) )
+			{
+				// Released
+				fireMouseEvent( newComponent, MouseEvent.MOUSE_RELEASED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON2 );
+				
+				// Check for double-click
+				long now = System.currentTimeMillis();
+				long delta = now - state.lastClick2;
+				if( delta < 300 )
+				{
+					// Double-click
+					fireMouseEvent( newComponent, MouseEvent.MOUSE_CLICKED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON2, 2 );
+					state.lastClick2 = 0;
+				}
+				else
+				{
+					state.lastClick2 = now;
+				}
+			}
+			
+			// Button 3
+			if( ( ( newMouseModifiers & MouseEvent.BUTTON3_DOWN_MASK ) != 0 ) &&
+				( ( state.mouseModifiers & MouseEvent.BUTTON3_DOWN_MASK ) == 0 ) )
+			{
+				// Pressed
+				fireMouseEvent( newComponent, MouseEvent.MOUSE_PRESSED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON3 );
+			}
+			else if( ( ( newMouseModifiers & MouseEvent.BUTTON3_DOWN_MASK ) == 0 ) &&
+					 ( ( state.mouseModifiers & MouseEvent.BUTTON3_DOWN_MASK ) != 0 ) )
+			{
+				// Released
+				fireMouseEvent( newComponent, MouseEvent.MOUSE_RELEASED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON3 );
+				
+				// Check for double-click
+				long now = System.currentTimeMillis();
+				long delta = now - state.lastClick3;
+				if( delta < 300 )
+				{
+					// Double-click
+					fireMouseEvent( newComponent, MouseEvent.MOUSE_CLICKED, newX, newY, state.keyModifiers | newMouseModifiers, MouseEvent.BUTTON3, 2 );
+					state.lastClick3 = 0;
+				}
+				else
+				{
+					state.lastClick3 = now;
+				}
+			}
+			
+			state.mouseModifiers = newMouseModifiers;
+		}
+		
+		if( newComponent != state.oldComponent )
+		{
+			if( state.oldComponent != null )
+			{
+				// Exited old component
+				fireMouseEvent( state.oldComponent, MouseEvent.MOUSE_EXITED, state.oldX, state.oldY, state.keyModifiers | state.mouseModifiers );
+			}
+			
+			// Entered new component
+			fireMouseEvent( newComponent, MouseEvent.MOUSE_ENTERED, newX, newY, state.keyModifiers | state.mouseModifiers );
+			
+			state.oldComponent = newComponent;
+			state.oldX = newX - 1; // make sure that we will get a motion event
+		}
+		
+		if( ( newX != state.oldX ) || ( newY != state.oldY ) )
+		{
+			// New location
+			if( state.dragging )
+			{
+				// Dragged (button pressed)
+				fireMouseEvent( newComponent, MouseEvent.MOUSE_DRAGGED, newX, newY, state.keyModifiers | state.mouseModifiers );
+			}
+			else
+			{
+				// Moved (no button pressed)
+				fireMouseEvent( newComponent, MouseEvent.MOUSE_MOVED, newX, newY, state.keyModifiers | state.mouseModifiers );
+			}
+			
+			state.oldX = newX;
+			state.oldY = newY;
+		}
+	}
+	
+	///////////////////////////////////////////////////////////////////////////////////////
+	// Private
+	
+	private Window container;
+	private RFBClients clients;
+	
+	private static class State
+	{
+		public int keyModifiers = 0;
+		public Set keyPressed = new HashSet();
+		public int mouseModifiers = 0;
+		public Component oldComponent = null;
+		public int oldX, oldY;
+		public long lastClick1 = 0, lastClick2 = 0, lastClick3 = 0;
+		public boolean dragging = false;
+	}
+	
+	private State getState( RFBClient client )
+	{
+		State state = (State) clients.getProperty( client, "events" );
+		if( state == null )
+		{
+			state = new State();
+			clients.setProperty( client, "events", state );
+		}
+		
+		return state;
+	}
+	
+	private void fireEvent( ComponentEvent event )
+	{
+		Component source = (Component) event.getSource();
+		if( source != null )
+			source.getToolkit().getSystemEventQueue().postEvent( event );
+	}
+	
+	private void fireKeyEvent( int id, int vk, int location, char character, int modifiers )
+	{
+		fireEvent( new KeyEvent( getFocusComponent( container ), id, System.currentTimeMillis(), modifiers, vk, character, location ) );
+	}
+	
+	private void fireFocusEvent( Component component, int id, Component opposite )
+	{
+		fireEvent( new FocusEvent( component, id, true, opposite ) );
+	}
+	
+	private void fireMouseEvent( Component component, int id, int x, int y, int modifiers )
+	{
+		fireMouseEvent( component, id, x, y, modifiers, MouseEvent.NOBUTTON, 0 );
+	}
+	
+	private void fireMouseEvent( Component component, int id, int x, int y, int modifiers, int button )
+	{
+		fireMouseEvent( component, id, x, y, modifiers, button, 0 );
+	}
+	
+	private void fireMouseEvent( Component component, int id, int x, int y, int modifiers, int button, int clicks )
+	{
+		fireEvent( new MouseEvent( component, id, System.currentTimeMillis(), modifiers, x, y, clicks, button == MouseEvent.BUTTON2, button ) );
+	}
+	
+	private Point getLocation( Component component )
+	{
+		Point location = component.getLocation();
+		if( component == container )
+		{
+			return location;
+		}
+		else
+		{
+			Component parent = component.getParent();
+			if( parent != null )
+			{
+				Point parentLocation = getLocation( parent );
+				return new Point( location.x + parentLocation.x, location.y + parentLocation.y );
+			}
+			else
+			{
+				return location;
+			}
+		}
+	}
+	
+	private Component getFocusComponent( Component component )
+	{
+		return KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+		/*if( component.hasFocus() )
+		{
+			// We have focus
+			return component;
+		}
+		else if( component instanceof Container )
+		{
+			// Does one of our children have the focus?
+			Component[] components = ((Container) component).getComponents();
+			Component focusComponent = null;
+			for( int i = 0; i < components.length; i++ )
+			{
+				focusComponent = getFocusComponent( components[i] );
+				if( focusComponent != null )
+					// Has focus!
+					return focusComponent;
+			}
+		}
+		
+		return null;*/
+	}
 }

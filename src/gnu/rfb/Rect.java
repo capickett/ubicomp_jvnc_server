@@ -1,38 +1,19 @@
 package gnu.rfb;
 
-/**
-* <br><br><center><table border="1" width="80%"><hr>
-* <strong><a href="http://www.amherst.edu/~tliron/vncj">VNCj</a></strong>
-* <p>
-* Copyright (C) 2000-2002 by Tal Liron
-* <p>
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU Lesser General Public License
-* as published by the Free Software Foundation; either version 2.1
-* of the License, or (at your option) any later version.
-* <p>
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License</a>
-* for more details.
-* <p>
-* You should have received a copy of the <a href="http://www.gnu.org/copyleft/lesser.html">
-* GNU Lesser General Public License</a> along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-* <hr></table></center>
-**/
-
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
+
+/**
+* Rectangle of pixels that can be written to a stream. Base class for RFB encodings.
+**/
 
 public abstract class Rect implements Cloneable
 {
 	//
 	// Static operations
 	//
-
+	
 	public static int bestEncoding( int[] encodings )
 	{
 		for( int i = 0; i < encodings.length; i++ )
@@ -46,14 +27,13 @@ public abstract class Rect implements Cloneable
 				return encodings[i];
 			}
 		}
-
+		
 		// List does not include a supported encoding
 		return rfb.EncodingHextile;
 	}
-
+	
 	public static Rect encode( int encoding, PixelFormat pixelFormat, Image image, int x, int y, int w, int h )
 	{
-
 		// Grab pixels
 		int pixels[] = new int[ w * h ];
 		PixelGrabber grabber = new PixelGrabber( image, x, y, w, h, pixels, 0, w );
@@ -64,23 +44,17 @@ public abstract class Rect implements Cloneable
 		catch( InterruptedException e )
 		{
 		}
+		
 		return encode( encoding, pixels, pixelFormat, x, y, w, x, y, w, h );
 	}
-
+	
 	public static Rect encode( int encoding, int[] pixels, PixelFormat pixelFormat, int scanline, int x, int y, int w, int h )
 	{
 		return encode( encoding, pixels, pixelFormat, 0, 0, scanline, x, y, w, h );
 	}
-
+	
 	public static Rect encode( int encoding, int[] pixels, PixelFormat pixelFormat, int offsetX, int offsetY, int scanline, int x, int y, int w, int h )
 	{
-//         System.err.println("DEBUG[Rect] encode("+w+" x "+h+") pixels[0]="+pixels[0]);
-         if(w==0)
-         if(h==0)
-           {
-            Exception e = new Exception("w==h==0");
-            e.printStackTrace();
-           }
 		switch( encoding )
 		{
 		case rfb.EncodingRaw:
@@ -101,17 +75,17 @@ public abstract class Rect implements Cloneable
 	//
 	// Attributes
 	//
-
+	
 	public int x;
 	public int y;
 	public int w;
 	public int h;
 	public int count = 1;
-
+	
 	//
 	// Construction
 	//
-
+	
 	public Rect( int x, int y, int w, int h )
 	{
 		this.x = x;
@@ -119,11 +93,11 @@ public abstract class Rect implements Cloneable
 		this.w = w;
 		this.h = h;
 	}
-
+	
 	//
 	// Operations
 	//
-
+	
 	public void writeData( DataOutput output ) throws IOException
 	{
 		output.writeShort( x );
@@ -131,22 +105,22 @@ public abstract class Rect implements Cloneable
 		output.writeShort( w );
 		output.writeShort( h );
 	}
-
+	
 	public void transform( int transformX, int transformY )
 	{
 		x += transformX;
 		y += transformY;
 	}
-
+	
 	//
 	// Object
 	//
-
+	
 	public String toString()
 	{
 		return String.valueOf( x ) + "," + y + "," + w + "," + h;
 	}
-
+	
 	public Object clone() throws CloneNotSupportedException
 	{
 		throw new CloneNotSupportedException( "Rect not cloneable" );
@@ -154,7 +128,7 @@ public abstract class Rect implements Cloneable
 
 	///////////////////////////////////////////////////////////////////////////////////////
 	// Private
-
+	
 	protected static int[] copyPixels( int[] pixels, int scanline, int x, int y, int w, int h )
 	{
 		int size = w * h;
@@ -171,14 +145,14 @@ public abstract class Rect implements Cloneable
 			}
 			ourPixels[i] = pixels[p];
 		}
-
+		
 		return ourPixels;
 	}
-
+	
 	protected static void writePixel( DataOutput output, PixelFormat pixelFormat, int pixel ) throws IOException
 	{
 		pixel = pixelFormat.translatePixel( pixel );
-
+		
 		switch( pixelFormat.bitsPerPixel )
 		{
 		case 32:
@@ -200,24 +174,24 @@ public abstract class Rect implements Cloneable
 	protected static int getBackground( int pixels[], int scanline, int x, int y, int w, int h )
 	{
 		return pixels[ y * scanline + x ];
-
+	
 		/*int runningX, runningY, k;
 		int counts[] = new int[256];
-
+		
 		int maxcount = 0;
 		int maxclr = 0;
-
+		
 		if( bitsPerPixel == 16 )
 			return pixels[0];
 		else if( bitsPerPixel == 32 )
 			return pixels[0];
-
-		// For 8-bit
+		
+		// For 8-bit	
 		return pixels[0];
-
+		
 		for( runningX = 0; runningX < 256; runningX++ )
 			counts[runningX] = 0;
-
+		
 		for( runningY = 0; runningY < pixels.length; runningY++ )
 		{
 			k = pixels[runningY];
@@ -232,7 +206,7 @@ public abstract class Rect implements Cloneable
 				maxclr = pixels[runningY];
 			}
 		}
-
+		
 		return maxclr;*/
 	}
 }
