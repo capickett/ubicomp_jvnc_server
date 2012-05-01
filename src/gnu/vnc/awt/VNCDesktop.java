@@ -1,157 +1,164 @@
 package gnu.vnc.awt;
 
-import gnu.awt.virtual.*;
-import gnu.awt.virtual.swing.*;
-import gnu.rfb.*;
-import gnu.rfb.server.*;
+import gnu.awt.virtual.swing.VirtualDesktop;
+import gnu.rfb.Colour;
+import gnu.rfb.PixelFormat;
+import gnu.rfb.server.RFBClient;
+import gnu.rfb.server.RFBClients;
+import gnu.rfb.server.RFBServer;
 
-import java.io.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-import java.util.*;
+import java.awt.Insets;
+import java.awt.image.DirectColorModel;
+import java.io.IOException;
 
 /**
-* AWT toolkit implemented entirely with JFC peers supporting multiple RFB client, thus allowing
-* a lightweight remote simulation of the operating system desktop.
-**/
+ * AWT toolkit implemented entirely with JFC peers supporting multiple RFB
+ * client, thus allowing a lightweight remote simulation of the operating system
+ * desktop.
+ **/
 
-public class VNCDesktop extends VirtualDesktop implements RFBServer
-{
-	//
-	// Construction
-	//
-	
-	public VNCDesktop( int bitsPerPixel, int rMask, int gMask, int bMask, String title, int width, int height )
-	{
-		super( bitsPerPixel, rMask, gMask, bMask, title, width, height );
-		init();
-	}
-	
-	public VNCDesktop( String title, int width, int height )
-	{
-		super( title, width, height );
-		init();
-	}
-	
-	//
-	// VirtualDesktop
-	//
-	
-	public void dispose()
-	{
-		clients.closeAll();
-		super.dispose();
-	}
-	
-	
-	//
-	// RFBServer
-	//
+public class VNCDesktop extends VirtualDesktop implements RFBServer {
 
-	// Clients
-	
-	public void addClient( RFBClient client )
-	{
-		clients.addClient( client );
-	}
-	
-	public void removeClient( RFBClient client )
-	{
-		clients.removeClient( client );
-		if( clients.isEmpty() && !shared )
-			dispose();
-	}
-	
-	// Attributes
-	
-	public String getDesktopName( RFBClient client )
-	{
-		return desktopFrame.getTitle();
-	}
-	
-	public int getFrameBufferWidth( RFBClient client )
-	{
-		Insets insets = desktopFrame.getInsets();
-		return desktopFrame.getWidth() - insets.left - insets.right;
-	}
-	
-	public int getFrameBufferHeight( RFBClient client )
-	{
-		Insets insets = desktopFrame.getInsets();
-		return desktopFrame.getHeight() - insets.top - insets.bottom;
-	}
-	
-	public PixelFormat getPreferredPixelFormat( RFBClient client )
-	{
-		return PixelFormat.RGB888;
-	}
-	
-	public boolean allowShared()
-	{
-		return true;
-	}
-	
-	// Messages from client to server
+    //
+    // Construction
+    //
 
-	public void setClientProtocolVersionMsg( RFBClient client, String protocolVersionMsg ) throws IOException
-	{
-	}
-	
-	public void setShared( RFBClient client, boolean shared ) throws IOException
-	{
-		if( shared )
-			this.shared = true;
-	}
-	
-	public void setPixelFormat( RFBClient client, PixelFormat pixelFormat ) throws IOException
-	{
-		pixelFormat.setDirectColorModel( (DirectColorModel) getColorModel() );
-	}
-	
-	public void setEncodings( RFBClient client, int[] encodings ) throws IOException
-	{
-	}
-	
-	public void fixColourMapEntries( RFBClient client, int firstColour, Colour[] colourMap ) throws IOException
-	{
-	}
+    private RFBClients clients = new RFBClients();
 
-	public void frameBufferUpdateRequest( RFBClient client, boolean incremental, int x, int y, int w, int h ) throws IOException
-	{
-		VNCRepaintManager.currentManager().frameBufferUpdate( desktopFrame, client, incremental, x, y, w, h );
-	}
-	
-	public void keyEvent( RFBClient client, boolean down, int key ) throws IOException
-	{
-		events.translateKeyEvent( client, down, key );
-	}
-	
-	public void pointerEvent( RFBClient client, int buttonMask, int x, int y ) throws IOException
-	{
-		events.translatePointerEvent( client, buttonMask, x, y );
-	}
-	
-	public void clientCutText( RFBClient client, String text ) throws IOException
-	{
-	}
+    private VNCEvents events;
 
-	///////////////////////////////////////////////////////////////////////////////////////
-	// Private
-	
-	private RFBClients clients = new RFBClients();
-	private VNCEvents events;
-	private boolean shared = false;
-	
-	private void init()
-	{
-		events = new VNCEvents( desktopFrame, clients );
-		VNCRepaintManager.currentManager().manage( desktopFrame, clients );
-		
-		// VNC frames cannot change size
-		desktopFrame.setResizable( false );
-		
-		show();
-	}
+    //
+    // VirtualDesktop
+    //
+
+    private boolean shared = false;
+
+    //
+    // RFBServer
+    //
+
+    // Clients
+
+    public VNCDesktop(int bitsPerPixel, int rMask, int gMask, int bMask,
+            String title, int width, int height) {
+        super(bitsPerPixel, rMask, gMask, bMask, title, width, height);
+        init();
+    }
+
+    public VNCDesktop(String title, int width, int height) {
+        super(title, width, height);
+        init();
+    }
+
+    // Attributes
+
+    @Override
+    public void addClient(RFBClient client) {
+        clients.addClient(client);
+    }
+
+    @Override
+    public boolean allowShared() {
+        return true;
+    }
+
+    @Override
+    public void clientCutText(RFBClient client, String text) throws IOException {
+    }
+
+    @Override
+    public void dispose() {
+        clients.closeAll();
+        super.dispose();
+    }
+
+    @Override
+    public void fixColourMapEntries(RFBClient client, int firstColour,
+            Colour[] colourMap) throws IOException {
+    }
+
+    // Messages from client to server
+
+    @Override
+    public void frameBufferUpdateRequest(RFBClient client, boolean incremental,
+            int x, int y, int w, int h) throws IOException {
+        VNCRepaintManager.currentManager().frameBufferUpdate(desktopFrame,
+                client, incremental, x, y, w, h);
+    }
+
+    @Override
+    public String getDesktopName(RFBClient client) {
+        return desktopFrame.getTitle();
+    }
+
+    @Override
+    public int getFrameBufferHeight(RFBClient client) {
+        Insets insets = desktopFrame.getInsets();
+        return desktopFrame.getHeight() - insets.top - insets.bottom;
+    }
+
+    @Override
+    public int getFrameBufferWidth(RFBClient client) {
+        Insets insets = desktopFrame.getInsets();
+        return desktopFrame.getWidth() - insets.left - insets.right;
+    }
+
+    @Override
+    public PixelFormat getPreferredPixelFormat(RFBClient client) {
+        return PixelFormat.RGB888;
+    }
+
+    private void init() {
+        events = new VNCEvents(desktopFrame, clients);
+        VNCRepaintManager.currentManager().manage(desktopFrame, clients);
+
+        // VNC frames cannot change size
+        desktopFrame.setResizable(false);
+
+        show();
+    }
+
+    @Override
+    public void keyEvent(RFBClient client, boolean down, int key)
+            throws IOException {
+        events.translateKeyEvent(client, down, key);
+    }
+
+    @Override
+    public void pointerEvent(RFBClient client, int buttonMask, int x, int y)
+            throws IOException {
+        events.translatePointerEvent(client, buttonMask, x, y);
+    }
+
+    @Override
+    public void removeClient(RFBClient client) {
+        clients.removeClient(client);
+        if (clients.isEmpty() && !shared)
+            dispose();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // Private
+
+    @Override
+    public void setClientProtocolVersionMsg(RFBClient client,
+            String protocolVersionMsg) throws IOException {
+    }
+
+    @Override
+    public void setEncodings(RFBClient client, int[] encodings)
+            throws IOException {
+    }
+
+    @Override
+    public void setPixelFormat(RFBClient client, PixelFormat pixelFormat)
+            throws IOException {
+        pixelFormat.setDirectColorModel((DirectColorModel) getColorModel());
+    }
+
+    @Override
+    public void setShared(RFBClient client, boolean shared) throws IOException {
+        if (shared)
+            this.shared = true;
+    }
 }
-

@@ -1,16 +1,14 @@
 package gnu.rfb.server;
 
-import gnu.rfb.*;
-
-import java.io.*;
+import java.io.IOException;
 
 /**
-* To be implemented by RFB authentication models.
-**/
+ * To be implemented by RFB authentication models.
+ **/
 
-public interface RFBAuthenticator
-{
-	// Operations
-	
-	public boolean authenticate( RFBClient client ) throws IOException;
+public interface RFBAuthenticator {
+
+    // Operations
+
+    public boolean authenticate(RFBClient client) throws IOException;
 }
