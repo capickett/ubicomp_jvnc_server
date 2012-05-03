@@ -84,8 +84,8 @@ public class VNCRobot extends Component implements RFBServer {
         // If you really really want automatic refreshes, comment out the following two lines.
         // BEWARE, it will send the entire screen, and probably be unusably slow. For now,
         // you must "request screen refresh" manually from your VNC viewer.
-        if (incremental)
-            return;
+        //if (incremental)
+        //    return;
 
         // Create image
         BufferedImage image = robot.createScreenCapture(new Rectangle(x, y, w,
