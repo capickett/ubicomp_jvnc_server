@@ -16,9 +16,9 @@ import javax.swing.SwingUtilities;
  */
 public class VNCApplet extends JApplet {
     
-    private Thread mVNCThread = null;
+    private VNCHost mVNCHost = null;
 
-    //Called when this applet is loaded into the browser.
+    // Called when this applet is loaded into the browser.
     public void init() {
         final String serverIP = getParameter("serverIP");
         final int displayPort = Integer.parseInt(getParameter("displayPort"));
@@ -26,7 +26,7 @@ public class VNCApplet extends JApplet {
         final int width = Integer.parseInt(getParameter("displayWidth"));
         final int height = Integer.parseInt(getParameter("displayHeight"));
 
-        //Execute a job on the event-dispatching thread; creating this applet's GUI.
+        // Execute a job on the event-dispatching thread; creating this applet's GUI.
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 
@@ -36,14 +36,12 @@ public class VNCApplet extends JApplet {
 
                         @Override
                         public void actionPerformed(ActionEvent ae) {
-                            if(mVNCThread == null) {
-                                VNCHost p = new VNCHost(serverIP, displayName, displayPort, height, width);
-                                mVNCThread = new Thread(p);
-                                mVNCThread.run();
+                            if(mVNCHost == null) {
+                                mVNCHost = new VNCHost(serverIP, displayName,
+                                        displayPort, height, width);
+                                mVNCHost.start();
                                 button.setText("Stop");
                             } else { // XXX Implement means to kill Screen Share
-                                mVNCThread.interrupt();
-                                mVNCThread = null;
                                 button.setText("Start");
                             }
                         }
