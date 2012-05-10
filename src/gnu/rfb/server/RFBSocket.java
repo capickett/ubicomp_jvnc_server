@@ -47,6 +47,8 @@ public class RFBSocket implements RFBClient, Runnable {
 
     private DataInputStream input;
 
+    private boolean mRunning;
+
     // Messages from server to client
 
     private DataOutputStream output;
@@ -268,8 +270,9 @@ public class RFBSocket implements RFBClient, Runnable {
             initServer();
             writeServerInit();
 
+            mRunning = true;
             // RFBClient message loop
-            while (true) {
+            while (mRunning) {
                 int b = input.readUnsignedByte();
                 switch (b) {
                 case rfb.SetPixelFormat:
@@ -287,7 +290,7 @@ public class RFBSocket implements RFBClient, Runnable {
                         // We add a small delay for local connections, because viewers are sometimes
                         // "too fast" and end up spending all their CPU cycles on socket communication,
                         // the result being that the user interface gets extremely sluggish.
-                        Thread.sleep(200);
+                        Thread.sleep(200); // TODO Try changing this
                     break;
                 case rfb.KeyEvent:
                     readKeyEvent();
@@ -424,5 +427,9 @@ public class RFBSocket implements RFBClient, Runnable {
             output.writeShort(colours[i].b);
         }
         output.flush();
+    }
+
+    public synchronized void stop() {
+        mRunning = false;
     }
 }

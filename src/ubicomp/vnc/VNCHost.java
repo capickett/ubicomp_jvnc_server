@@ -26,6 +26,7 @@ public class VNCHost {
     private final int sWidth;
     private final int sHeight;
     private boolean mStarted;
+    private RFBHost mRFBHost;
 
     public VNCHost(String serverIp, String displayName, int displayPort,
             int height, int width) {
@@ -53,21 +54,25 @@ public class VNCHost {
             Class<VNCRobot> serverClass = VNCRobot.class;
             // RFB host
             try {
-                new RFBHost(display, displayName, serverClass, width, height,
-                        new DefaultRFBAuthenticator(password, restrictedTo,
-                                noPasswordFor));
+                mRFBHost = new RFBHost(display, displayName, serverClass,
+                        width, height, new DefaultRFBAuthenticator(password,
+                                restrictedTo, noPasswordFor));
             } catch (NoSuchMethodException e) {
                 e.printStackTrace();
             }
 
             // Webserver
             // new WebServer(display, displayName, width, height);
-            
+
             mStarted = true;
 
             System.out.println("  VNC display " + display);
             // System.out.println("  Web server on port " + (5800 + display));
             System.out.println("  Class: " + serverClassName);
         }
+    }
+
+    public void stop() {
+        mRFBHost.stop();
     }
 }

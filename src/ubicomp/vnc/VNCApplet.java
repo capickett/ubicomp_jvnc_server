@@ -15,7 +15,7 @@ import javax.swing.SwingUtilities;
  * 
  */
 public class VNCApplet extends JApplet {
-    
+
     private VNCHost mVNCHost = null;
 
     // Called when this applet is loaded into the browser.
@@ -29,19 +29,21 @@ public class VNCApplet extends JApplet {
         // Execute a job on the event-dispatching thread; creating this applet's GUI.
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
-                
+
                 public void run() {
                     final JButton button = new JButton("Start");
                     button.addActionListener(new ActionListener() {
 
                         @Override
                         public void actionPerformed(ActionEvent ae) {
-                            if(mVNCHost == null) {
+                            if (mVNCHost == null) {
                                 mVNCHost = new VNCHost(serverIP, displayName,
                                         displayPort, height, width);
                                 mVNCHost.start();
                                 button.setText("Stop");
-                            } else { // XXX Implement means to kill Screen Share
+                            } else {
+                                mVNCHost.stop();
+                                mVNCHost = null;
                                 button.setText("Start");
                             }
                         }
