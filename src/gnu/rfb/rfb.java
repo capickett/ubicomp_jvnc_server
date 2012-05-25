@@ -2,12 +2,16 @@ package gnu.rfb;
 
 /**
  * RFB constants and utilities.
+ * 
+ * Modified by Cameron Pickett 2012
  **/
 
 public abstract class rfb {
 
     // Handshaking
-    public static final String ProtocolVersionMsg = "RFB 003.003\n";
+    public static final String ProtocolVersionMsg = "RFB 003.008\n";
+    public static final String ProtocolVersionMsgv33 = "RFB 003.003\n";
+    public static final String ProtocolVersionMsgv38 = "RFB 003.008\n";
 
     // Authentication
     public static final int ConnFailed = 0;
@@ -16,6 +20,9 @@ public abstract class rfb {
     public static final int VncAuthOK = 0;
     public static final int VncAuthFailed = 1;
     public static final int VncAuthTooMany = 2;
+    // RFB 3.8
+    public static final byte[] NoAuthv8 = { ConnFailed, NoAuth };
+    public static final byte[] VncAuthv8 = { ConnFailed, VncAuth };
 
     // Messages from server to client
     public static final int FrameBufferUpdate = 0;

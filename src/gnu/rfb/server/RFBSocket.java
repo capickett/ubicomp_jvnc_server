@@ -15,6 +15,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.Socket;
 
+import ubicomp.rfb.server.RFBAuthenticator;
+
 /**
  * Standard RFB client model using a simple {@link java.net.Socket}.
  **/
@@ -48,6 +50,8 @@ public class RFBSocket implements RFBClient, Runnable {
     private DataInputStream input;
 
     private boolean mRunning;
+    
+    private boolean v38;
 
     // Messages from server to client
 
@@ -68,6 +72,12 @@ public class RFBSocket implements RFBClient, Runnable {
     public RFBSocket(Socket socket, Constructor constructor,
             Object[] constructorArgs, RFBHost host,
             RFBAuthenticator authenticator) throws IOException {
+        this(socket, constructor, constructorArgs, host, authenticator, false);
+    }
+    
+    public RFBSocket(Socket socket, Constructor constructor,
+            Object[] constructorArgs, RFBHost host,
+            RFBAuthenticator authenticator, boolean v38) throws IOException {
         this.socket = socket;
         this.constructor = constructor;
         this.constructorArgs = constructorArgs;
@@ -81,6 +91,8 @@ public class RFBSocket implements RFBClient, Runnable {
                 socket.getInputStream()));
         output = new DataOutputStream(new BufferedOutputStream(
                 socket.getOutputStream(), 16384));
+        
+        this.v38 = v38;
 
         // Start socket listener thread
         new Thread(this, "RFBSocket-"
@@ -230,6 +242,7 @@ public class RFBSocket implements RFBClient, Runnable {
         byte[] b = new byte[12];
         input.readFully(b);
         protocolVersionMsg = new String(b);
+        v38 = protocolVersionMsg.equals(rfb.ProtocolVersionMsgv38);
     }
 
     private synchronized void readSetEncodings() throws IOException {
@@ -264,6 +277,7 @@ public class RFBSocket implements RFBClient, Runnable {
             // Handshaking
             writeProtocolVersionMsg();
             readProtocolVersionMsg();
+            authenticator.setVersion(v38);
             if (!authenticator.authenticate(this))
                 throw new Throwable();
             readClientInit();
@@ -290,7 +304,7 @@ public class RFBSocket implements RFBClient, Runnable {
                         // We add a small delay for local connections, because viewers are sometimes
                         // "too fast" and end up spending all their CPU cycles on socket communication,
                         // the result being that the user interface gets extremely sluggish.
-                        Thread.sleep(200); // TODO Try changing this
+                        Thread.sleep(50); // TODO Try changing this
                     break;
                 case rfb.KeyEvent:
                     readKeyEvent();
@@ -334,13 +348,18 @@ public class RFBSocket implements RFBClient, Runnable {
     }
 
     @Override
-    public synchronized void write(byte bytes[]) throws IOException {
-        output.write(bytes);
+    public synchronized void writeInt(int integer) throws IOException {
+        output.writeInt(integer);
+    }
+    
+    @Override
+    public synchronized void writeByte(int integer) throws IOException {
+        output.writeByte(integer);
     }
 
     @Override
-    public synchronized void write(int integer) throws IOException {
-        output.writeInt(integer);
+    public synchronized void writeBytes(byte bytes[]) throws IOException {
+        output.write(bytes);
     }
 
     // Messages from server to client
@@ -355,9 +374,27 @@ public class RFBSocket implements RFBClient, Runnable {
     @Override
     public synchronized void writeConnectionFailed(String text)
             throws IOException {
-        output.writeInt(rfb.ConnFailed);
+        if (v38)
+            output.writeInt(rfb.ConnFailed);
+        else
+            output.writeByte(rfb.ConnFailed);       
         output.writeInt(text.length());
         output.writeBytes(text);
+        output.flush();
+    }
+    
+    @Override
+    public synchronized void writeSecurityResult(boolean ok, String text)
+            throws IOException {
+        if (ok) {
+            output.writeInt(rfb.VncAuthOK);
+        } else {
+            output.writeInt(rfb.VncAuthFailed);
+            if (v38) {
+                output.writeInt(text.length());
+                output.writeBytes(text);
+            }
+        }
         output.flush();
     }
 

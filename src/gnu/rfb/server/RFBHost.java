@@ -6,6 +6,8 @@ import java.net.ServerSocket;
 import java.util.HashSet;
 import java.util.Set;
 
+import ubicomp.rfb.server.RFBAuthenticator;
+
 /**
  * Waits on a standard VNC socket and creates an
  * {@link gnu.rfb.server.RFBServer RFBServer} implementation for each new,

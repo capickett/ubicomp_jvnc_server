@@ -10,8 +10,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import ubicomp.rfb.server.RFBAuthenticator;
+
 /**
  * Free-access RFB authentication models.
+ * 
+ * Modified by Cameron Pickett 2012
  **/
 
 public class DefaultRFBAuthenticator implements RFBAuthenticator {
@@ -37,13 +41,15 @@ public class DefaultRFBAuthenticator implements RFBAuthenticator {
         }
     }
 
-    private String password;
+    protected String password;
 
     //
     // RFBAuthenticator
     //
 
     private boolean restrict;
+    
+    private boolean v38;
 
     ///////////////////////////////////////////////////////////////////////////////////////
     // Private
@@ -52,15 +58,21 @@ public class DefaultRFBAuthenticator implements RFBAuthenticator {
     private Set<InetAddress> noPasswordFor = new HashSet<InetAddress>();
 
     public DefaultRFBAuthenticator() {
-        this(null, null, null);
+        this(null, null, null, false);
     }
 
     public DefaultRFBAuthenticator(String password, String restrictedTo,
             String noPasswordFor) {
+        this(password, restrictedTo, noPasswordFor, false);
+    }
+    
+    public DefaultRFBAuthenticator(String password, String restrictedTo,
+            String noPasswordFor, boolean v38) {
         restrict = (restrictedTo != null && restrictedTo.length() > 0);
         addInetAddresses(this.restrictedTo, restrictedTo);
         addInetAddresses(this.noPasswordFor, noPasswordFor);
         this.password = password;
+        this.v38 = v38;
     }
 
     @Override
@@ -79,11 +91,21 @@ public class DefaultRFBAuthenticator implements RFBAuthenticator {
     }
 
     private boolean challenge(RFBClient client) throws IOException {
-        client.write(rfb.VncAuth);
-
+        if (v38) {
+            // Server requires authorization
+            client.writeByte(1);
+            client.writeByte(rfb.VncAuth);
+            
+            // Discard client reply
+            byte[] response = new byte[1];
+            client.read(response);
+        } else {
+            client.writeInt(rfb.VncAuth);
+        }
+        
         // Write 16 byte challenge
         byte[] challenge = new byte[16];
-        client.write(challenge);
+        client.writeBytes(challenge);
         client.flush();
 
         // Read 16 byte response
@@ -101,35 +123,50 @@ public class DefaultRFBAuthenticator implements RFBAuthenticator {
         }
         DesCipher des = new DesCipher(key);
 
-        // Cipher challange
+        // Cipher challenge
         des.encrypt(challenge, 0, challenge, 0);
         des.encrypt(challenge, 8, challenge, 8);
 
         // Compare ciphers
         if (Arrays.equals(challenge, response)) {
-            client.write(rfb.VncAuthOK);
-            client.flush();
+            client.writeSecurityResult(true, "");
             return true;
         } else {
-            client.write(rfb.VncAuthFailed);
-            client.flush();
+            client.writeSecurityResult(false, "Password Incorrect!");
             return false;
         }
     }
 
-    private boolean isChallengeRequired(RFBClient client) {
+    protected boolean isChallengeRequired(RFBClient client) {
         return !noPasswordFor.contains(client.getInetAddress());
     }
 
-    private boolean isRestricted(RFBClient client) {
+    protected boolean isRestricted(RFBClient client) {
         if (restrict)
             return !restrictedTo.contains(client.getInetAddress());
         else
             return false;
     }
-
+    
     private void noChallenge(RFBClient client) throws IOException {
-        client.write(rfb.NoAuth);
-        client.flush();
+        if(v38) {
+            client.writeByte(1);
+            client.writeByte(rfb.NoAuth);
+            client.flush();
+            
+            byte[] response = new byte[1];
+            client.read(response);
+            
+            client.writeInt(rfb.VncAuthOK);
+            client.flush();
+        } else {
+            client.writeInt(rfb.NoAuth);
+            client.flush();
+        }
     }
+
+    @Override
+    public void setVersion(boolean v38) {
+        this.v38 = v38;       
+    }    
 }

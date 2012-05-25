@@ -37,9 +37,11 @@ public interface RFBClient {
 
     public void setPreferredEncoding(int encoding);
 
-    public void write(byte bytes[]) throws IOException;
+    public void writeBytes(byte bytes[]) throws IOException;
 
-    public void write(int integer) throws IOException;
+    public void writeInt(int integer) throws IOException;
+
+    public void writeByte(int out) throws IOException;
 
     // Operations
 
@@ -53,4 +55,6 @@ public interface RFBClient {
 
     public void writeSetColourMapEntries(int firstColour, Colour colours[])
             throws IOException;
+
+    void writeSecurityResult(boolean ok, String text) throws IOException;
 }

@@ -27,7 +27,7 @@ import java.io.IOException;
  **/
 
 public class VNCRobot extends Component implements RFBServer {
-
+    
     //
     // Construction
     //

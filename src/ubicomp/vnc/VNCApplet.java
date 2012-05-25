@@ -9,9 +9,11 @@ import java.awt.event.ActionListener;
 import javax.swing.JApplet;
 import javax.swing.JButton;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /**
- * @author patricklarson
+ * @author patricklarson, Cameron Pickett
  * 
  */
 public class VNCApplet extends JApplet {
@@ -25,13 +27,21 @@ public class VNCApplet extends JApplet {
         final String displayName = getParameter("displayName");
         final int width = Integer.parseInt(getParameter("displayWidth"));
         final int height = Integer.parseInt(getParameter("displayHeight"));
+        final boolean autostart = Boolean.parseBoolean(getParameter("autostart"));
 
         // Execute a job on the event-dispatching thread; creating this applet's GUI.
         try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
             SwingUtilities.invokeAndWait(new Runnable() {
 
                 public void run() {
                     final JButton button = new JButton("Start");
+                    if (autostart) {
+                        mVNCHost = new VNCHost(serverIP, displayName,
+                                displayPort, height, width);
+                        mVNCHost.start();
+                        button.setText("Stop");
+                    }
                     button.addActionListener(new ActionListener() {
 
                         @Override
@@ -48,7 +58,7 @@ public class VNCApplet extends JApplet {
                             }
                         }
                     });
-                    add(button);
+                    getContentPane().add(button);
                 }
             });
         } catch (Exception e) {
